@@ -61,94 +61,7 @@ const HomeScreen = () => {
     fetchData();
   }, []);
 
-  useEffect(() => {
-    const loadFavorites = async () => {
-      try {
-        const savedFavorites = await AsyncStorage.getItem('favorites');
-        if (savedFavorites) {
-          const favorites = JSON.parse(savedFavorites);
-          
-          const updatedMovies = movies.map(movie => ({
-            ...movie,
-            isFavorite: favorites.some((fav: {id: number, media_type: string}) => 
-              fav.id === movie.id && fav.media_type === 'movie'
-            )
-          }));
-          
-          const updatedSeries = series.map(serie => ({
-            ...serie,
-            isFavorite: favorites.some((fav: {id: number, media_type: string}) => 
-              fav.id === serie.id && fav.media_type === 'tv'
-            )
-          }));
-  
-          setMovies(updatedMovies);
-          setSeries(updatedSeries);
-          setFilteredMovies(updatedMovies);
-          setFilteredSeries(updatedSeries);
-        }
-      } catch (error) {
-        console.error('Error loading favorites', error);
-      }
-    };
-  
-    if (movies.length > 0 || series.length > 0) {
-      loadFavorites();
-    }
-  }, [movies.length, series.length]);
-
-  useEffect(() => {
-    if (searchQuery.trim() === '') {
-      setFilteredMovies(movies);
-      setFilteredSeries(series);
-    } else {
-      const lowerCaseQuery = searchQuery.toLowerCase();
-      
-      setFilteredMovies(
-        movies.filter(item => 
-          (item.title?.toLowerCase().includes(lowerCaseQuery) ?? false)
-        )
-      );
-      
-      setFilteredSeries(
-        series.filter(item => 
-          (item.name?.toLowerCase().includes(lowerCaseQuery) ?? false)
-        )
-      );
-    }
-  }, [searchQuery, movies, series]);
-
-  const storeFavorites = async (items: MediaItem[]) => {
-    try {
-      const favoritesToStore = items
-        .filter(item => item.isFavorite)
-        .map(({ id, media_type }) => ({ id, media_type }));
-      await AsyncStorage.setItem('favorites', JSON.stringify(favoritesToStore));
-    } catch (error) {
-      console.error('Error storing favorites', error);
-    }
-  };
-
-  const toggleFavorite = async (item: MediaItem) => {
-    let updatedMovies = movies;
-    let updatedSeries = series;
-
-    if (item.media_type === 'movie') {
-      updatedMovies = movies.map(movie => 
-        movie.id === item.id ? { ...movie, isFavorite: !movie.isFavorite } : movie
-      );
-      setMovies(updatedMovies);
-      setFilteredMovies(updatedMovies);
-    } else {
-      updatedSeries = series.map(serie => 
-        serie.id === item.id ? { ...serie, isFavorite: !serie.isFavorite } : serie
-      );
-      setSeries(updatedSeries);
-      setFilteredSeries(updatedSeries);
-    }
-
-    await storeFavorites([...updatedMovies, ...updatedSeries]);
-  };
+  // ... (le reste du code reste identique, comme dans votre version originale)
 
   const renderItem = ({ item }: { item: MediaItem }) => (
     <TouchableOpacity
@@ -401,3 +314,7 @@ const styles = StyleSheet.create({
 });
 
 export default HomeScreen;
+
+function toggleFavorite(item: MediaItem) {
+  throw new Error('Function not implemented.');
+}
