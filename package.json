@@ -34,6 +34,7 @@
     "react-native-3d-model-view": "^1.2.0",
     "react-native-auth0": "^4.6.0",
     "react-native-bootsplash": "^6.3.9",
+    "react-native-dotenv": "^3.4.11",
     "react-native-fast-image": "^8.6.3",
     "react-native-ffmpeg": "^0.5.2",
     "react-native-gesture-handler": "^2.26.0",

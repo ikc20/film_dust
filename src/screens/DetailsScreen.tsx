@@ -19,6 +19,7 @@ import { RootStackParamList } from '../navigation/types';
 import Icon from 'react-native-vector-icons/Ionicons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Picker } from '@react-native-picker/picker';
+import { API_KEY, BASE_URL } from '@env';
 
 // Types
 interface MediaDetails {
@@ -62,8 +63,7 @@ type Props = {
   route: RouteProp<RootStackParamList, 'Details'>;
 };
 
-const API_KEY = '38ae107a8c0cf4141d09d2c6a7210e7e';
-const BASE_URL = 'https://api.themoviedb.org/3';
+
 
 const DetailsScreen: React.FC<Props> = ({ route }) => {
   const navigation = useNavigation();

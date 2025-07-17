@@ -7,9 +7,10 @@ import { TabView, SceneMap, TabBar } from 'react-native-tab-view';
 import { ActivityIndicator } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { API_KEY, BASE_URL } from '@env';
 
-const API_KEY = '38ae107a8c0cf4141d09d2c6a7210e7e';
-const BASE_URL = 'https://api.themoviedb.org/3';
+
+
 const { width } = Dimensions.get('window');
 
 const HomeScreen = () => {
