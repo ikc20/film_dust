@@ -1,15 +1,23 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, FlatList, Image, TouchableOpacity, StyleSheet, Dimensions, TextInput } from 'react-native';
+import { 
+  View, 
+  Text, 
+  FlatList, 
+  Image, 
+  TouchableOpacity, 
+  StyleSheet, 
+  Dimensions, 
+  TextInput,
+  ActivityIndicator,
+  Platform 
+} from 'react-native';
 import axios from 'axios';
 import { useNavigation } from '@react-navigation/native';
 import { RootStackParamList, MediaItem } from '../navigation/types';
 import { TabView, SceneMap, TabBar } from 'react-native-tab-view';
-import { ActivityIndicator } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { API_KEY, BASE_URL } from '@env';
-
-
 
 const { width } = Dimensions.get('window');
 
@@ -31,20 +39,23 @@ const HomeScreen = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [moviesRes, seriesRes] = await Promise.all([
+        const [moviesRes, seriesRes, favorites] = await Promise.all([
           axios.get(`${BASE_URL}/movie/popular?api_key=${API_KEY}&language=fr-FR`),
-          axios.get(`${BASE_URL}/tv/popular?api_key=${API_KEY}&language=fr-FR`)
+          axios.get(`${BASE_URL}/tv/popular?api_key=${API_KEY}&language=fr-FR`),
+          AsyncStorage.getItem('favorites')
         ]);
+
+        const favoritesData = favorites ? JSON.parse(favorites) : [];
         
         const moviesWithFavorites = moviesRes.data.results.map((movie: MediaItem) => ({ 
           ...movie, 
-          isFavorite: false,
+          isFavorite: favoritesData.some((fav: MediaItem) => fav.id === movie.id),
           media_type: 'movie'
         }));
         
         const seriesWithFavorites = seriesRes.data.results.map((serie: MediaItem) => ({ 
           ...serie, 
-          isFavorite: false,
+          isFavorite: favoritesData.some((fav: MediaItem) => fav.id === serie.id),
           media_type: 'tv'
         }));
         
@@ -53,7 +64,7 @@ const HomeScreen = () => {
         setSeries(seriesWithFavorites);
         setFilteredSeries(seriesWithFavorites);
       } catch (error) {
-        console.error(error); 
+        console.error('Fetch error:', error); 
       } finally {
         setLoading(false);
       }
@@ -62,7 +73,54 @@ const HomeScreen = () => {
     fetchData();
   }, []);
 
-  // ... (le reste du code reste identique, comme dans votre version originale)
+  useEffect(() => {
+    if (searchQuery) {
+      setFilteredMovies(
+        movies.filter(movie => 
+          (movie.title || '').toLowerCase().includes(searchQuery.toLowerCase())
+        )
+      );
+      setFilteredSeries(
+        series.filter(serie => 
+          (serie.name || '').toLowerCase().includes(searchQuery.toLowerCase())
+        )
+      );
+    } else {
+      setFilteredMovies(movies);
+      setFilteredSeries(series);
+    }
+  }, [searchQuery, movies, series]);
+
+  const toggleFavorite = async (item: MediaItem) => {
+    try {
+      const favorites = await AsyncStorage.getItem('favorites');
+      let favoritesArray = favorites ? JSON.parse(favorites) : [];
+      
+      if (item.isFavorite) {
+        favoritesArray = favoritesArray.filter((fav: MediaItem) => fav.id !== item.id);
+      } else {
+        favoritesArray.push({
+          id: item.id,
+          title: item.title || item.name,
+          poster_path: item.poster_path,
+          media_type: item.media_type,
+          isFavorite: true
+        });
+      }
+
+      await AsyncStorage.setItem('favorites', JSON.stringify(favoritesArray));
+
+      // Update local state
+      setMovies(prev => prev.map(movie => 
+        movie.id === item.id ? {...movie, isFavorite: !movie.isFavorite} : movie
+      ));
+      setSeries(prev => prev.map(serie => 
+        serie.id === item.id ? {...serie, isFavorite: !serie.isFavorite} : serie
+      ));
+    } catch (error) {
+      console.error('Error saving favorites', error);
+    }
+  };
 
   const renderItem = ({ item }: { item: MediaItem }) => (
     <TouchableOpacity
@@ -76,7 +134,7 @@ const HomeScreen = () => {
       <Image
         source={{ uri: `https://image.tmdb.org/t/p/w500${item.poster_path}` }}
         style={styles.poster}
-        resizeMode="contain"
+        resizeMode="cover"
       />
       <TouchableOpacity 
         style={styles.favoriteIcon}
@@ -96,7 +154,7 @@ const HomeScreen = () => {
           {item.title || item.name}
         </Text>
         <Text style={styles.meta}>
-          {item.media_type === 'movie' ? '🎬 Film' : '📺 Série'} • ⭐ {item.vote_average.toFixed(1)}
+          {item.media_type === 'movie' ? '🎬 Film' : '📺 Série'} • ⭐ {item.vote_average?.toFixed(1) || 'N/A'}
         </Text>
       </View>
     </TouchableOpacity>
@@ -219,6 +277,17 @@ const styles = StyleSheet.create({
     padding: 10,
     backgroundColor: 'white',
     position: 'relative',
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.1,
+        shadowRadius: 2,
+      },
+      android: {
+        elevation: 2,
+      },
+    }),
   },
   searchInput: {
     height: 40,
@@ -244,11 +313,17 @@ const styles = StyleSheet.create({
     backgroundColor: 'white',
     borderRadius: 8,
     overflow: 'hidden',
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.2,
-    shadowRadius: 2,
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.2,
+        shadowRadius: 2,
+      },
+      android: {
+        elevation: 2,
+      },
+    }),
   },
   poster: {
     width: '100%',
@@ -271,11 +346,17 @@ const styles = StyleSheet.create({
   },
   tabBar: {
     backgroundColor: 'white',
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.1,
+        shadowRadius: 2,
+      },
+      android: {
+        elevation: 2,
+      },
+    }),
   },
   indicator: {
     backgroundColor: '#2c3e50',
@@ -315,7 +396,3 @@ const styles = StyleSheet.create({
 });
 
 export default HomeScreen;
-
-function toggleFavorite(item: MediaItem) {
-  throw new Error('Function not implemented.');
-}

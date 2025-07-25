@@ -21,6 +21,9 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Picker } from '@react-native-picker/picker';
 import { API_KEY, BASE_URL } from '@env';
 
+
+
+
 // Types
 interface MediaDetails {
   title?: string;

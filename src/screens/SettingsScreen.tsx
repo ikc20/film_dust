@@ -1,241 +1,164 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, Switch, TouchableOpacity, Platform } from 'react-native';
+import {
+  View,
+  Text,
+  Switch,
+  StyleSheet,
+  SectionList,
+  useColorScheme,
+  Pressable,
+} from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 
-const SettingsScreen = () => {
-  const [settings, setSettings] = useState({
-    darkMode: false,
-    notifications: true,
-    wifiOnly: false,
-  });
+type SettingItem = {
+  label: string;
+  icon: string;
+  value?: boolean;
+  onPress: () => void;
+  disabled?: boolean;
+};
 
-  const toggleSetting = (key: string) => {
-    setSettings({ ...settings, [key]: !settings[key] });
+type SettingSection = {
+  title: string;
+  icon: string;
+  data: SettingItem[];
+};
+
+const SettingsScreen: React.FC = () => {
+  const [darkMode, setDarkMode] = useState(false);
+  const [notifications, setNotifications] = useState(true);
+  const [wifiOnly, setWifiOnly] = useState(false);
+  const colorScheme = useColorScheme();
+
+  const toggleSetting = (setting: 'darkMode' | 'notifications' | 'wifiOnly') => {
+    switch (setting) {
+      case 'darkMode':
+        setDarkMode(!darkMode);
+        break;
+      case 'notifications':
+        setNotifications(!notifications);
+        break;
+      case 'wifiOnly':
+        setWifiOnly(!wifiOnly);
+        break;
+    }
   };
 
-  const settingsOptions = [
+  const settingsOptions: SettingSection[] = [
     {
       title: "Apparence",
       icon: "color-palette",
-      items: [
+      data: [
         {
           label: "Mode sombre",
           icon: "moon",
-          value: settings.darkMode,
-          onPress: () => toggleSetting('darkMode')
-        }
-      ]
+          value: darkMode,
+          onPress: () => toggleSetting('darkMode'),
+        },
+      ],
     },
     {
       title: "Notifications",
       icon: "notifications",
-      items: [
+      data: [
         {
           label: "Activer les notifications",
-          icon: "notifications",
-          value: settings.notifications,
-          onPress: () => toggleSetting('notifications')
+          icon: "notifications-outline",
+          value: notifications,
+          onPress: () => toggleSetting('notifications'),
         },
-        {
-          label: "Uniquement en Wi-Fi",
-          icon: "wifi",
-          value: settings.wifiOnly,
-          onPress: () => toggleSetting('wifiOnly'),
-          disabled: !settings.notifications
-        }
-      ]
+      ],
     },
     {
-      title: "Compte",
-      icon: "person",
-      items: [
+      title: "Connexion",
+      icon: "wifi",
+      data: [
         {
-          label: "Modifier le profil",
-          icon: "create",
-          action: () => console.log("Navigate to Edit Profile")
+          label: "Wi-Fi uniquement",
+          icon: "wifi-outline",
+          value: wifiOnly,
+          onPress: () => toggleSetting('wifiOnly'),
         },
-        {
-          label: "Changer le mot de passe",
-          icon: "lock-closed",
-          action: () => console.log("Navigate to Change Password")
-        }
-      ]
-    }
+      ],
+    },
   ];
 
+  const renderItem = ({ item }: { item: SettingItem }) => (
+    <Pressable
+      style={({ pressed }) => [
+        styles.item,
+        { backgroundColor: pressed ? '#f2f2f2' : 'transparent' },
+      ]}
+      onPress={item.onPress}
+    >
+      <View style={styles.labelContainer}>
+        <Icon name={item.icon} size={20} color="#444" />
+        <Text style={styles.label}>{item.label}</Text>
+      </View>
+      <Switch
+        value={item.value}
+        onValueChange={item.onPress}
+        disabled={item.disabled}
+        thumbColor={item.value ? '#007AFF' : '#ccc'}
+      />
+    </Pressable>
+  );
+
+  const renderSectionHeader = ({ section }: { section: SettingSection }) => (
+    <View style={styles.sectionHeader}>
+      <Icon name={section.icon} size={20} color="#666" />
+      <Text style={styles.sectionTitle}>{section.title}</Text>
+    </View>
+  );
+
   return (
-    <ScrollView style={[styles.container, settings.darkMode && styles.darkContainer]}>
-      <Text style={[styles.header, settings.darkMode && styles.darkText]}>Paramètres</Text>
-      
-      {settingsOptions.map((section, index) => (
-        <View key={index} style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <Icon 
-              name={section.icon} 
-              size={20} 
-              color={settings.darkMode ? "#aaa" : "#555"} 
-              style={styles.sectionIcon}
-            />
-            <Text style={[styles.sectionTitle, settings.darkMode && styles.darkText]}>
-              {section.title}
-            </Text>
-          </View>
-          
-          {section.items.map((item, itemIndex) => (
-            <TouchableOpacity 
-              key={itemIndex} 
-              onPress={item.onPress || item.action}
-              disabled={item.disabled}
-              style={[
-                styles.settingItem, 
-                itemIndex === section.items.length - 1 && styles.lastItem,
-                settings.darkMode && styles.darkItem
-              ]}
-            >
-              <View style={styles.settingContent}>
-                <Icon 
-                  name={item.icon} 
-                  size={20} 
-                  color={settings.darkMode ? "#ddd" : "#2c3e50"} 
-                  style={styles.itemIcon}
-                />
-                <Text style={[
-                  styles.settingText, 
-                  settings.darkMode && styles.darkText,
-                  item.disabled && styles.disabledText
-                ]}>
-                  {item.label}
-                </Text>
-              </View>
-              
-              {item.value !== undefined ? (
-                <Switch
-                  value={item.value}
-                  onValueChange={item.onPress}
-                  disabled={item.disabled}
-                  thumbColor={Platform.OS === 'android' ? (settings.darkMode ? "#555" : "#f5f5f5") : undefined}
-                  trackColor={{
-                    false: settings.darkMode ? "#555" : "#f1f1f1",
-                    true: settings.darkMode ? "#4a4a4a" : "#81b0ff"
-                  }}
-                />
-              ) : (
-                <Icon 
-                  name="chevron-forward" 
-                  size={20} 
-                  color={settings.darkMode ? "#aaa" : "#ccc"} 
-                />
-              )}
-            </TouchableOpacity>
-          ))}
-        </View>
-      ))}
-      
-      <TouchableOpacity style={[styles.logoutButton, settings.darkMode && styles.darkLogoutButton]}>
-        <Text style={styles.logoutText}>Déconnexion</Text>
-      </TouchableOpacity>
-    </ScrollView>
+    <SectionList
+      sections={settingsOptions}
+      keyExtractor={(item, index) => item.label + index}
+      renderItem={renderItem}
+      renderSectionHeader={renderSectionHeader}
+      contentContainerStyle={[
+        styles.container,
+        { backgroundColor: colorScheme === 'dark' ? '#111' : '#fff' },
+      ]}
+    />
   );
 };
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
-    backgroundColor: '#f8f9fa',
-    paddingHorizontal: 16,
-    paddingTop: 20,
-  },
-  darkContainer: {
-    backgroundColor: '#121212',
-  },
-  header: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    color: '#2c3e50',
-    marginBottom: 24,
-    paddingHorizontal: 8,
-  },
-  section: {
-    marginBottom: 24,
-    borderRadius: 12,
-    backgroundColor: '#fff',
-    overflow: 'hidden',
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 3,
-  },
-  darkItem: {
-    backgroundColor: '#1e1e1e',
-    borderColor: '#333',
+    padding: 16,
   },
   sectionHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#eee',
-  },
-  darkSectionHeader: {
-    borderBottomColor: '#333',
-  },
-  sectionIcon: {
-    marginRight: 8,
+    marginTop: 24,
+    marginBottom: 8,
   },
   sectionTitle: {
-    fontSize: 18,
+    fontSize: 17,
     fontWeight: '600',
-    color: '#2c3e50',
+    marginLeft: 8,
+    color: '#444',
   },
-  settingItem: {
+  item: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    padding: 16,
-    backgroundColor: '#fff',
+    paddingVertical: 14,
+    paddingHorizontal: 8,
+    borderBottomColor: '#e0e0e0',
     borderBottomWidth: 1,
-    borderBottomColor: '#eee',
+    borderRadius: 8,
   },
-  lastItem: {
-    borderBottomWidth: 0,
-  },
-  settingContent: {
+  labelContainer: {
     flexDirection: 'row',
     alignItems: 'center',
   },
-  itemIcon: {
-    marginRight: 12,
-  },
-  settingText: {
+  label: {
+    marginLeft: 10,
     fontSize: 16,
-    color: '#2c3e50',
-  },
-  disabledText: {
-    color: '#aaa',
-  },
-  darkText: {
-    color: '#fff',
-  },
-  logoutButton: {
-    marginTop: 24,
-    padding: 16,
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    alignItems: 'center',
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 3,
-  },
-  darkLogoutButton: {
-    backgroundColor: '#1e1e1e',
-  },
-  logoutText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#e74c3c',
+    color: '#222',
   },
 });
 
